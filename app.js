@@ -3,14 +3,10 @@
 console.log(wavHeader);
 
 if(!window.console) window.console = {info:function(){},log:function(){},warn:function(){}};
-sfc = function(i){
-	return String.fromCharCode(i);
-}
 
-d = document;
-ce = function(nn){return d.createElement(nn);}
+var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
+d = document, ce = function(nn){return d.createElement(nn)};
 
-var wav,stc =String.fromCharCode;
 wav ={
 	parse:function(wavHeader){
 		//RIFF
@@ -93,36 +89,56 @@ wav ={
 	},
 	encodeInt:function( data, bits, signed ,bigEndian){
 		var max = Math.pow( 2, bits );
-		( data >= max || data < -( max >> 1 ) ) && ( data = 0 );
-		data < 0 && ( data += max );
-		for( var r = []; data; r[r.length] = String.fromCharCode( data % 256 ), data = Math.floor( data / 256 ) );
+		
+		if( data >= max || data < -( max >> 1 ) ) data = 0;
+		
+		if(data < 0) data += max;
+		
+		for( var r = []; data; data = Math.floor( data / 256 ) ) {
+			//adding 8 bit char to string
+			r[r.length] = sfc( data % 256 );
+		}
 		for( bits = -( -bits >> 3 ) - r.length; bits--; r[r.length] = "\0" );
 		return ( bigEndian ? r.reverse() : r ).join( "" );
 	},
-	generateFrequency:function(frequency,sample_rate,duration,cb){
+	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
 		var samples_per_cycle = sample_rate/frequency;
 		var deg = 180/samples_per_cycle;
 		var samples = sample_rate*duration;
-		
+		var halfMax = Math.pow( 2, bits )/2;
+		var unsign = 0;
+		if(bits == 8) unsign = halfMax; 
+
 		for(i=0;i<samples;i+=deg) {
-			var sample = Math.sin(i)*128;//32767;//16 bit int
-			cb(parseInt(sample+128));
+			var sample = Math.sin(i)*halfMax;//32767;//16 bit int
+			cb(Math.round(sample)+unsign);
 		}
 	},
-	generateWav:function(frequency,sample_rate,duration){
-		var c3,c2,bits_per_sample = 8,num_channels = 1,ics = function(i,len){return wav.intToChunkSize(i,len)};
+	plotableFrequency:function(frequency,sample_rate,duration,cb){
+		var bits = 8;
+		this.generateFrequency(frequency,sample_rate,duration,bits,function(point){
+			cb(point);//plot unsigned bit range
+		});
+	},
+	generateWav:function(frequency,sample_rate,bits,duration){
+		
+		console.log(bits);
+		
+		
+		var c3,c2,bits_per_sample = bits,num_channels = 1,ics = wav.intToChunkSize;
 		//NumSamples * NumChannels * BitsPerSample/8
 		var samples = "";
 		var z = this;
-		this.generateFrequency(frequency,sample_rate,duration,function(point){
-			//if(point<256 && point>0){
-				samples += stc(point);
-			//} else {
-			//	samples += z.encodeInt(point,16,point<0,true);
-			//}
+		this.generateFrequency(frequency,sample_rate,duration,bits_per_sample,function(point){
+			if(bits_per_sample == 8){
+				samples += sfc(point);
+			} else {
+				samples += String.fromCharCode(point & 255, (point >> 8) & 255);
+			}
 		});
 		
 		c3 = "data"+ics(samples.length,4)+samples;
+		
 		//   16 offset   pcm  num channels
 		c2 = ics(16,4)+ics(1,2)+ics(num_channels,2);
 		//      sample rate                    byte rate
@@ -130,7 +146,7 @@ wav ={
 		//           block align                     bits per sample
 		c2 += ics(num_channels * bits_per_sample,2)+ics(bits_per_sample,2)+c3;
 		
-		return "RIFF"+c2.length+"WAVEfmt "+c2;
+		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
 	}
 }
 //---------------------------------------------------
@@ -162,8 +178,8 @@ c.height = 256;
 var x = c.getContext('2d');
 x.beginPath();    
 var w = 0;
-wav.generateFrequency(262,8000,0.5,function(point){
-	x.lineTo(w,parseInt(point));//(point+32767)/256));
+wav.plotableFrequency(262,8000,0.5,function(point){
+	x.lineTo(w,point);//(point+32767)/256));
 	w +=2;
 });
 
@@ -172,14 +188,32 @@ x.stroke();
 //---------------------------------------------------
 console.info('STARTING WAV TEST');
 
-var dataURI = "data:audio/x-wav;base64,"+btoa(wav.generateWav(262,8000,0.5));
+var dataURI = "data:audio/wav;base64,"+btoa(wav.generateWav(262,8000,0.5,8));
 console.log(dataURI);
 
-var ael = ce('audio');
 
-d.body.appendChild(ael);
-ael.src = dataURI;
+ael = new Audio(dataURI);
 ael.play();
+
+setTimeout(function(){
+	var dataURI = "data:audio/wav;base64,"+btoa(wav.generateWav(262,8000,0.5,16));
+	//console.log(dataURI);
+
+	aeld = new Audio(dataURI);
+	aeld.play();
+},1000);
+
+setTimeout(function(){
+	console.log('test resampled');
+	ael2 = new Audio('test-resampled.wav');
+	ael2.play();
+},3000);
+
+setTimeout(function(){
+	console.log('test resampled data uri');
+	ael3 = new Audio(testResampled);
+	ael3.play();
+},6000);
 
 //download link
 var a = ce('a');

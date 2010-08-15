@@ -5,8 +5,7 @@ console.log(wavHeader);
 if(!window.console) window.console = {info:function(){},log:function(){},warn:function(){}};
 
 var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
-d = document, ce = function(nn){return d.createElement(nn)};
-
+d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s){return "data:audio/wav;base64,"+s}
 wav ={
 	parse:function(wavHeader){
 		//RIFF
@@ -51,13 +50,16 @@ wav ={
 		console.log('data size: ',dataSize);
 		offset+=4;
 		console.info('last offset ', offset);
-
-		while(wavHeader.length > offset){
+		
+		
+		console.log('not traversing data');
+		/*while(wavHeader.length > offset){
 			var c = wavHeader.substr(offset,1);
 			console.log(c);
 			console.log(btoa(c));
 			offset++;
-		}
+		}*/
+		
 	},
 	readChunkSize:function(cs){
 		var dec = "";
@@ -133,7 +135,7 @@ wav ={
 		//      sample rate                    byte rate
 		c2 += ics(sample_rate,4)+ics((sample_rate * num_channels * bits_per_sample)/8,4)
 		//           block align                     bits per sample
-		c2 += ics(num_channels * bits_per_sample,2)+ics(bits_per_sample,2)+c3;
+		c2 += ics((num_channels * bits_per_sample)/8,2)+ics(bits_per_sample,2)+c3;
 		
 		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
 	}
@@ -177,15 +179,34 @@ x.stroke();
 //---------------------------------------------------
 console.info('STARTING WAV TEST');
 
-var dataURI = "data:audio/wav;base64,"+btoa(wav.generateWav(262,8000,0.5,8));
-console.log(dataURI);
+
+var wav_16 = wav.generateWav(262,11025,0.5,16);
+console.log('@@@@@@@@@@@@@ generated wav');
+
+wav.parse(wav_16);
+
+a = new Audio(duri(btoa(wav_16)));
+a.play();
+
+console.log('@@@@@@@@@@@@@ working wav');
+
+wav.parse(atob(testDownsampled.split('base64,')[1]));
+
+setTimeout(function(){
+	aeld = new Audio(testDownsampled);
+	aeld.play();
+},1000)
+
+//var dataURI = "data:audio/wav;base64,"+btoa(wav_8);
 
 
+
+/*
 ael = new Audio(dataURI);
 ael.play();
 
 setTimeout(function(){
-	var dataURI = "data:audio/x-wav;base64,"+btoa(wav.generateWav(262,16000,0.5,16));
+	var dataURI = "data:audio/wav;base64,"+btoa(wav.generateWav(262,16000,0.5,16));
 	console.log(dataURI);
 
 	aeld = new Audio(dataURI);
@@ -194,6 +215,7 @@ setTimeout(function(){
 
 
 setTimeout(function(){
+	console.log('test pre generated');
 	aeld = new Audio(testGenerated);
 	aeld.play();
 },2000);
@@ -215,6 +237,9 @@ var a = ce('a');
 a.href = dataURI;
 d.body.appendChild(a);
 a.appendChild(d.createTextNode('download audio!'));
+
+*/
+
 /*
 CREDITS:
 great explaination of the wav file format

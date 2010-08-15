@@ -87,30 +87,18 @@ wav ={
 		}
 		return voodoo;
 	},
-	encodeInt:function( data, bits, signed ,bigEndian){
-		var max = Math.pow( 2, bits );
-		
-		if( data >= max || data < -( max >> 1 ) ) data = 0;
-		
-		if(data < 0) data += max;
-		
-		for( var r = []; data; data = Math.floor( data / 256 ) ) {
-			//adding 8 bit char to string
-			r[r.length] = sfc( data % 256 );
-		}
-		for( bits = -( -bits >> 3 ) - r.length; bits--; r[r.length] = "\0" );
-		return ( bigEndian ? r.reverse() : r ).join( "" );
-	},
 	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
 		var samples_per_cycle = sample_rate/frequency;
 		var deg = 180/samples_per_cycle;
 		var samples = sample_rate*duration;
-		var halfMax = Math.pow( 2, bits )/2;
+		var max = Math.pow( 2, bits );
+		
+		var halfMax = max/2;
 		var unsign = 0;
 		if(bits == 8) unsign = halfMax; 
 
 		for(i=0;i<samples;i+=deg) {
-			var sample = Math.sin(i)*halfMax;//32767;//16 bit int
+			var sample = Math.sin(i)*halfMax;
 			cb(Math.round(sample)+unsign);
 		}
 	},
@@ -197,12 +185,18 @@ ael = new Audio(dataURI);
 ael.play();
 
 setTimeout(function(){
-	var dataURI = "data:audio/wav;base64,"+btoa(wav.generateWav(262,8000,0.5,16));
-	//console.log(dataURI);
+	var dataURI = "data:audio/x-wav;base64,"+btoa(wav.generateWav(262,16000,0.5,16));
+	console.log(dataURI);
 
 	aeld = new Audio(dataURI);
 	aeld.play();
 },1000);
+
+
+setTimeout(function(){
+	aeld = new Audio(testGenerated);
+	aeld.play();
+},2000);
 
 setTimeout(function(){
 	console.log('test resampled');

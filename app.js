@@ -115,14 +115,13 @@ wav ={
 		}
 	},
 	plotableFrequency:function(frequency,sample_rate,duration,cb){
-		var bits = 8;
-		this.generateFrequency(frequency,sample_rate,duration,bits,function(point){
+		this.generateFrequency(frequency,sample_rate,duration,8,function(point){
 			cb(point);//plot unsigned bit range
 		});
 	},
-	generateWav:function(frequency,sample_rate,bits,duration){
+	generateWav:function(frequency,sample_rate,duration,bits){
 		
-		console.log(bits);
+		console.log('bits'+bits);
 		
 		
 		var c3,c2,bits_per_sample = bits,num_channels = 1,ics = wav.intToChunkSize;
@@ -130,9 +129,11 @@ wav ={
 		var samples = "";
 		var z = this;
 		this.generateFrequency(frequency,sample_rate,duration,bits_per_sample,function(point){
+			
 			if(bits_per_sample == 8){
-				samples += sfc(point);
+				samples += sfc(point & 255);
 			} else {
+				//16bit
 				samples += String.fromCharCode(point & 255, (point >> 8) & 255);
 			}
 		});

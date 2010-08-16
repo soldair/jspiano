@@ -90,18 +90,17 @@ wav ={
 		return voodoo;
 	},
 	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
-		var samples_per_cycle = sample_rate/frequency;
-		var deg = 180/samples_per_cycle;
-		var samples = sample_rate*duration;
-		var max = Math.pow( 2, bits );
+		var samples_per_cycle = sample_rate/frequency,
+		deg = 180/samples_per_cycle,
+		samples = sample_rate*duration,
+		max = Math.pow( 2, bits ),
+		halfMax = max/2,
+		unsign = 0;
 		
-		var halfMax = max/2;
-		var unsign = 0;
 		if(bits == 8) unsign = halfMax; 
-
 		for(i=0;i<samples;i+=deg) {
 			var sample = Math.sin(i)*halfMax;
-			cb(Math.round(sample)+unsign);
+			cb(sample+unsign);
 		}
 	},
 	plotableFrequency:function(frequency,sample_rate,duration,cb){
@@ -111,21 +110,24 @@ wav ={
 	},
 	generateWav:function(frequency,sample_rate,duration,bits){
 		
-		console.log('bits'+bits);
-		
-		
+
 		var c3,c2,bits_per_sample = bits,num_channels = 1,ics = wav.intToChunkSize;
 		//NumSamples * NumChannels * BitsPerSample/8
 		var samples = "";
 		var z = this;
-		this.generateFrequency(frequency,sample_rate,duration,bits_per_sample,function(point){
-			
-			if(bits_per_sample == 8){
-				samples += sfc(point & 255);
-			} else {
-				//16bit
-				samples += String.fromCharCode(point & 255, (point >> 8) & 255);
-			}
+
+		if(!(frequency instanceof Array)) frequency = [frequency];
+		
+		frequency.forEach(function(f,k){
+			z.generateFrequency(f,sample_rate,duration,bits_per_sample,function(point){
+				
+				if(bits_per_sample == 8){
+					samples += sfc(point & 255);
+				} else {
+					//16bit
+					samples += String.fromCharCode(point & 255, (point >> 8) & 255);
+				}
+			});
 		});
 		
 		c3 = "data"+ics(samples.length,4)+samples;
@@ -168,35 +170,76 @@ c.height = 256;
 
 var x = c.getContext('2d');
 x.beginPath();    
-var w = 0;
+/*var w = 0;
 wav.plotableFrequency(262,8000,0.5,function(point){
 	x.lineTo(w,point);//(point+32767)/256));
 	w +=2;
 });
+*/
+var height = 255;
+var width = 100;
+var num = 7;
 
+var w = 0;
+while(num) {
+	x.moveTo(w,0);
+	x.lineTo(w,height);//top to bottom
+	x.lineTo((w += width),height);//line on bottom
+	num--;
+}
+x.lineTo(w,0);
 x.stroke(); 
 
+//black keys
+b_w = 50;
+b_h = Math.floor(height/3)*2;
+w = b_w+(b_w/2);
+num = 0;
+//2 skip 3 skip
+while(num< 6) {
+	if(num != 2 && num != 6){
+		x.beginPath();
+		x.moveTo(w,0);
+		x.lineTo(w,b_h);
+		x.lineTo(w+b_w,b_h);
+		x.lineTo(w+b_w,0);
+		x.lineTo(w,0);
+		x.fill();
+	}
+	w+= width;
+	num++;
+}
 //---------------------------------------------------
 console.info('STARTING WAV TEST');
 
+var pianoFrequency = function(i){
+	440*Math.pow(1.0594630943,(i+1)-49)
+}
+/*
+var frequencies = [];
+for(i =0;i<10;i++) {
+	frequencies.push(pianoFrequency);
+}
 
-var wav_16 = wav.generateWav(262,11025,0.5,16);
-console.log('@@@@@@@@@@@@@ generated wav');
-
-wav.parse(wav_16);
-
-a = new Audio(duri(btoa(wav_16)));
+var wav_16 = wav.generateWav(frequencies,8000,0.5,16);
+var dataURI = duri(btoa(wav_16));
+a = new Audio(dataURI);
 a.play();
 
-console.log('@@@@@@@@@@@@@ working wav');
+var a = ce('a');
+a.href = dataURI;
+d.body.appendChild(a);
+a.appendChild(d.createTextNode('download audio!'));
+*/
 
-wav.parse(atob(testDownsampled.split('base64,')[1]));
 
+//wav.parse(atob(testDownsampled.split('base64,')[1]));
+/*
 setTimeout(function(){
 	aeld = new Audio(testDownsampled);
 	aeld.play();
 },1000)
-
+*/
 //var dataURI = "data:audio/wav;base64,"+btoa(wav_8);
 
 
@@ -233,10 +276,6 @@ setTimeout(function(){
 },6000);
 
 //download link
-var a = ce('a');
-a.href = dataURI;
-d.body.appendChild(a);
-a.appendChild(d.createTextNode('download audio!'));
 
 */
 
@@ -248,4 +287,6 @@ audio provided me with good unit testing fodder:
 	http://www.e2s.com/x10-tones.htm
 frequency chart for piano
 	http://www.euclideanspace.com/art/music/scale/index.htm
+frequency equation for piano
+	http://en.wikipedia.org/wiki/Piano_key_frequencies
 */

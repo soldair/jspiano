@@ -172,105 +172,104 @@ console.info('STARTING frequency TEST:');
 
 var c = document.getElementById('c');
 
-c.width = 700;
-c.height = 256;
-
-var x = c.getContext('2d');
-
-x.beginPath();
-var height = 255,width = 100,w = 0,num = 7,keys = [],i = 0;
-while(num) {
-	x.moveTo(w,0);
-	x.lineTo(w,height);//top to bottom
-	x.lineTo((w += width),height);//line on bottom
-	keys.push({color:'white',key:i});
-	num--;i++;
-}
-x.lineTo(w,0);
-x.stroke(); 
-
-//black keys
-b_w = 50;
-b_h = Math.floor(height/3)*2;
-w = b_w+(b_w/2);
-
-
-//2 skip 3 skip
-var regions = [],cursor = 0;
-num = 0;
-while(num< 6) {
-	cursor++;
-	if(num != 2 && num != 6){
-		x.beginPath();
-		x.moveTo(w,0);
-		x.lineTo(w,b_h);
-		x.lineTo(w+b_w,b_h);
-		x.lineTo(w+b_w,0);
-		x.lineTo(w,0);
-		x.fill();
-		
-		keys.splice(cursor,0,{color:'black',key:regions.length});
-		regions.push({t:[w,0],b:[w+b_w,b_h]});
-
-		cursor++;
-	}
-	w+= width;
-	num++;
-}  
-
-
-//---------------------------------------------------
-console.info('STARTING WAV TEST');
-
 var pianoFrequency = function(i){
 	return 440*Math.pow(1.0594630943,(i+1)-49)
 }
 
-var generated = {};
-c.addEventListener('click', function(ev){
-	var x = ev.clientX,y = ev.clientY;
-	//white key
-	var key = Math.floor(x/100);
 
-	var h = ev.currentTarget.height,b_key = -1;
-	for(var i in regions){
-		var d = regions[i];
-		if((d.t[0] < x && d.b[0] > x) && (d.t[1] < y && d.b[1] > y)){
-			b_key = i;
-			break;
-		}
+var piano = function(c){
+
+	c.width = 700;
+	c.height = 256;
+	var x = c.getContext('2d');
+
+	x.beginPath();
+	var height = 255,width = 100,w = 0,num = 7,keys = [],i = 0;
+	while(num) {
+		x.moveTo(w,0);
+		x.lineTo(w,height);//top to bottom
+		x.lineTo((w += width),height);//line on bottom
+		keys.push({color:'white',key:i});
+		num--;i++;
 	}
-	//is black key?
-	for(var i in keys){
-		var v  = keys[i];
-		if(b_key > -1) {
+	x.lineTo(w,0);
+	x.stroke(); 
+
+	//black keys
+	b_w = 50;
+	b_h = Math.floor(height/3)*2;
+	w = b_w+(b_w/2);
+
+
+	//2 skip 3 skip
+	var regions = [],cursor = 0;
+	num = 0;
+	while(num< 6) {
+		cursor++;
+		if(num != 2 && num != 6){
+			x.beginPath();
+			x.moveTo(w,0);
+			x.lineTo(w,b_h);
+			x.lineTo(w+b_w,b_h);
+			x.lineTo(w+b_w,0);
+			x.lineTo(w,0);
+			x.fill();
+			
+			keys.splice(cursor,0,{color:'black',key:regions.length});
+			regions.push({t:[w,0],b:[w+b_w,b_h]});
+
+			cursor++;
+		}
+		w+= width;
+		num++;
+	}  
+
+	var generated = {};
+	c.addEventListener('click', function(ev){
+		var x = ev.clientX,y = ev.clientY;
+		//white key
+		var key = Math.floor(x/100);
+
+		var h = ev.currentTarget.height,b_key = -1;
+		for(var i in regions){
+			var d = regions[i];
+			if((d.t[0] < x && d.b[0] > x) && (d.t[1] < y && d.b[1] > y)){
+				b_key = i;
+				break;
+			}
+		}
+		//is black key?
+		for(var i in keys){
 			var v  = keys[i];
-			if(v['color']=='black' && v['key'] == b_key) {
-				key = i;
-				break;
-			}
-		} else {
-			if(v['color']=='white' && v['key'] == key) {
-				key = i;
-				break;
+			if(b_key > -1) {
+				var v  = keys[i];
+				if(v['color']=='black' && v['key'] == b_key) {
+					key = i;
+					break;
+				}
+			} else {
+				if(v['color']=='white' && v['key'] == key) {
+					key = i;
+					break;
+				}
 			}
 		}
-	}
-	
-	key = (((+key)*-1)+10)+30;
-	console.log('play key: ',key);
-	
-	if(!generated[key]){
-		generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),8000,0.5,16))));
-	}
-	generated[key].play();
-},false);
+		
+		key = (((+key)*-1)+10)+30;
 
+		if(!generated[key]){
+			generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),8000,0.5,16))));
+		}
+		generated[key].play();
+	},false);
+};
 
+piano(c);
+/*
+var x = c.getContext('2d');
 //draw wavform
-x.beginPath();    
-
 var w = 0;
+x.beginPath();    
 x.strokeStyle = "rgba(200,0,0,0.3)"; 
 wav.plotableFrequency(5,8000,0.5,function(point){
 	if(w < c.width){
@@ -279,6 +278,7 @@ wav.plotableFrequency(5,8000,0.5,function(point){
 	}
 });
 x.stroke();  
+*/
 
 /*
 var frequencies = [];
@@ -358,4 +358,6 @@ frequency chart for piano
 	http://www.euclideanspace.com/art/music/scale/index.htm
 frequency equation for piano
 	http://en.wikipedia.org/wiki/Piano_key_frequencies
+the js example i found while trying to get my frequencies to sound right
+	http://www.sk89q.com/playground/jswav/
 */

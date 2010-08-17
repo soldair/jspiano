@@ -89,7 +89,7 @@ wav ={
 		}
 		return voodoo;
 	},
-	/*generateFrequency:function(frequency,sample_rate,duration,bits,cb){
+	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
 		var samples_per_cycle = sample_rate/frequency,
 		deg = 180/samples_per_cycle,
 		samples = sample_rate*duration,
@@ -102,14 +102,14 @@ wav ={
 			var sample = Math.sin(i)*halfMax;
 			cb(sample+unsign);
 		}
-	},*/
-	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
+	},
+	/*generateFrequency:function(frequency,sample_rate,duration,bits,cb){
 		var vol = Math.pow( 2, bits )/0.5;
 		for (var i = 0; i < sample_rate * duration; i++) {
 			var v = vol * Math.sin((2 * Math.PI) * (i / sample_rate) * frequency);
 			cb(v);
 		}
-	},
+	},*/
 	plotableFrequency:function(frequency,sample_rate,duration,cb){
 		this.generateFrequency(frequency,sample_rate,duration,8,function(point){
 			cb(point);//plot unsigned bit range
@@ -176,14 +176,8 @@ c.width = 700;
 c.height = 256;
 
 var x = c.getContext('2d');
-x.beginPath();    
-/*var w = 0;
-wav.plotableFrequency(262,8000,0.5,function(point){
-	x.lineTo(w,point);//(point+32767)/256));
-	w +=2;
-});
-*/
 
+x.beginPath();
 var height = 255,width = 100,w = 0,num = 7,keys = [],i = 0;
 while(num) {
 	x.moveTo(w,0);
@@ -222,9 +216,8 @@ while(num< 6) {
 	}
 	w+= width;
 	num++;
-}
+}  
 
-console.log({hmm:keys});
 
 //---------------------------------------------------
 console.info('STARTING WAV TEST');
@@ -273,6 +266,19 @@ c.addEventListener('click', function(ev){
 	generated[key].play();
 },false);
 
+
+//draw wavform
+x.beginPath();    
+
+var w = 0;
+x.strokeStyle = "rgba(200,0,0,0.3)"; 
+wav.plotableFrequency(5,8000,0.5,function(point){
+	if(w < c.width){
+		x.lineTo(w,point);//(point+32767)/256));
+		w +=2;
+	}
+});
+x.stroke();  
 
 /*
 var frequencies = [];

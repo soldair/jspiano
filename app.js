@@ -89,7 +89,7 @@ wav ={
 		}
 		return voodoo;
 	},
-	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
+	/*generateFrequency:function(frequency,sample_rate,duration,bits,cb){
 		var samples_per_cycle = sample_rate/frequency,
 		deg = 180/samples_per_cycle,
 		samples = sample_rate*duration,
@@ -101,6 +101,13 @@ wav ={
 		for(i=0;i<samples;i+=deg) {
 			var sample = Math.sin(i)*halfMax;
 			cb(sample+unsign);
+		}
+	},*/
+	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
+		var vol = Math.pow( 2, bits )/0.5;
+		for (var i = 0; i < sample_rate * duration; i++) {
+			var v = vol * Math.sin((2 * Math.PI) * (i / sample_rate) * frequency);
+			cb(v);
 		}
 	},
 	plotableFrequency:function(frequency,sample_rate,duration,cb){
@@ -165,7 +172,7 @@ console.info('STARTING frequency TEST:');
 
 var c = document.getElementById('c');
 
-c.width = 4000;
+c.width = 700;
 c.height = 256;
 
 var x = c.getContext('2d');
@@ -176,16 +183,14 @@ wav.plotableFrequency(262,8000,0.5,function(point){
 	w +=2;
 });
 */
-var height = 255;
-var width = 100;
-var num = 7;
 
-var w = 0;
+var height = 255,width = 100,w = 0,num = 7,keys = [],i = 0;
 while(num) {
 	x.moveTo(w,0);
 	x.lineTo(w,height);//top to bottom
 	x.lineTo((w += width),height);//line on bottom
-	num--;
+	keys.push({color:'white',key:i});
+	num--;i++;
 }
 x.lineTo(w,0);
 x.stroke(); 
@@ -194,9 +199,13 @@ x.stroke();
 b_w = 50;
 b_h = Math.floor(height/3)*2;
 w = b_w+(b_w/2);
-num = 0;
+
+
 //2 skip 3 skip
+var regions = [],cursor = 0;
+num = 0;
 while(num< 6) {
+	cursor++;
 	if(num != 2 && num != 6){
 		x.beginPath();
 		x.moveTo(w,0);
@@ -205,27 +214,81 @@ while(num< 6) {
 		x.lineTo(w+b_w,0);
 		x.lineTo(w,0);
 		x.fill();
+		
+		keys.splice(cursor,0,{color:'black',key:regions.length});
+		regions.push({t:[w,0],b:[w+b_w,b_h]});
+
+		cursor++;
 	}
 	w+= width;
 	num++;
 }
+
+console.log({hmm:keys});
+
 //---------------------------------------------------
 console.info('STARTING WAV TEST');
 
 var pianoFrequency = function(i){
-	440*Math.pow(1.0594630943,(i+1)-49)
+	return 440*Math.pow(1.0594630943,(i+1)-49)
 }
+
+var generated = {};
+c.addEventListener('click', function(ev){
+	var x = ev.clientX,y = ev.clientY;
+	//white key
+	var key = Math.floor(x/100);
+
+	var h = ev.currentTarget.height,b_key = -1;
+	for(var i in regions){
+		var d = regions[i];
+		if((d.t[0] < x && d.b[0] > x) && (d.t[1] < y && d.b[1] > y)){
+			b_key = i;
+			break;
+		}
+	}
+	//is black key?
+	for(var i in keys){
+		var v  = keys[i];
+		if(b_key > -1) {
+			var v  = keys[i];
+			if(v['color']=='black' && v['key'] == b_key) {
+				key = i;
+				break;
+			}
+		} else {
+			if(v['color']=='white' && v['key'] == key) {
+				key = i;
+				break;
+			}
+		}
+	}
+	
+	key = (((+key)*-1)+10)+30;
+	console.log('play key: ',key);
+	
+	if(!generated[key]){
+		generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),8000,0.5,16))));
+	}
+	generated[key].play();
+},false);
+
+
 /*
 var frequencies = [];
 for(i =0;i<10;i++) {
-	frequencies.push(pianoFrequency);
+	frequencies.push(pianoFrequency(i));
 }
 
 var wav_16 = wav.generateWav(frequencies,8000,0.5,16);
 var dataURI = duri(btoa(wav_16));
+
+console.log(dataURI);
+
 a = new Audio(dataURI);
 a.play();
-
+*/
+/*
 var a = ce('a');
 a.href = dataURI;
 d.body.appendChild(a);

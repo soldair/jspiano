@@ -1,8 +1,10 @@
 
 
-console.log(wavHeader);
-
-if(!window.console) window.console = {info:function(){},log:function(){},warn:function(){}};
+var noop = function(){};
+if(!window.console) window.console = {};
+if(!window.console.log) window.console.log = noop;
+if(!window.console.info) window.console.info = noop;
+if(!window.console.warn) window.console.warn = noop;
 
 var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
 d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s){return "data:audio/wav;base64,"+s}
@@ -167,8 +169,6 @@ console.info('STARTING PARSE TEST:');
 
 wav.parse(atob(wavHeader));
 
-//---------------------------------------------------
-console.info('STARTING frequency TEST:');
 
 var c = document.getElementById('c');
 

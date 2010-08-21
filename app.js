@@ -91,46 +91,78 @@ wav ={
 		}
 		return voodoo;
 	},
+	packer:function(v,bits){
+		var s = '',i;
+		for(i=0,b=bits/8;i<b;i++){
+			s+=String.fromCharCode(v & 255);
+			v = v >> 8;
+		}
+		return s;
+	},
 	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
-		var samples_per_cycle = sample_rate/frequency,
-		deg = 180/samples_per_cycle,
+		var k = 2* Math.PI * frequency / sample_rate;
 		samples = sample_rate*duration,
 		max = Math.pow( 2, bits ),
 		halfMax = max/2,
 		unsign = 0;
-		
 		if(bits == 8) unsign = halfMax; 
-		for(i=0;i<samples;i+=deg) {
-			var sample = Math.sin(i)*halfMax;
-			cb(sample+unsign);
+		
+		for (var i=0; i<samples; i++) {
+			
+			cb((Math.sin(k * i)*halfMax)+unsign,i);
 		}
 	},
-	/*generateFrequency:function(frequency,sample_rate,duration,bits,cb){
-		var vol = Math.pow( 2, bits )/0.5;
-		for (var i = 0; i < sample_rate * duration; i++) {
-			var v = vol * Math.sin((2 * Math.PI) * (i / sample_rate) * frequency);
-			cb(v);
-		}
-	},*/
 	plotableFrequency:function(frequency,sample_rate,duration,cb){
-		this.generateFrequency(frequency,sample_rate,duration,8,function(point){
-			cb(point);//plot unsigned bit range
+		var max = Math.pow(2,16),
+			half = max/2,
+			h = 256,
+			z = this;
+		
+		this.generateFrequency(frequency,sample_rate,duration,16,function(point){
+			//point = z.effects.volume(point,1.1,16);
+			cb(parseInt((point+half)*256/max));//plot unsigned bit range
 		});
 	},
 	generateWav:function(frequency,sample_rate,duration,bits){
-		
 
-		var c3,c2,bits_per_sample = bits,num_channels = 1,ics = wav.intToChunkSize;
+		var c3,c2,num_channels = 1,ics = wav.intToChunkSize;
 		//NumSamples * NumChannels * BitsPerSample/8
 		var samples = "";
 		var z = this;
 
 		if(!(frequency instanceof Array)) frequency = [frequency];
-		
+
 		frequency.forEach(function(f,k){
-			z.generateFrequency(f,sample_rate,duration,bits_per_sample,function(point){
+			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the volume of the drop at the last sample... maybe
+			var do_fade = 0,v=79,dec=0;
+			if(k == frequency.length-1){
+				do_fade = 1;
+
+				var samples_per_wave = Math.round(sample_rate/frequency),
+				samples_in_last = sample_rate*0.03,
+				dec_interval = 79/samples_in_last,
+				s_samples = (sample_rate*duration),
+				decriment_at_sample = s_samples-samples_in_last;
 				
-				if(bits_per_sample == 8){
+				console.log('waves in file: ',s_samples/(sample_rate/frequency));
+				console.log('samples in last 100th:',samples_in_last);
+
+			}
+			z.generateFrequency(f,sample_rate,duration,bits,function(point,sample){
+
+				//volume!
+
+				//point = z.effects.volume(point,1.1,bits);
+				if(do_fade && sample >= decriment_at_sample) {
+					//console.log('should decriment_at_sample');
+					dec += dec_interval;
+					if(dec >=1 && v){
+						v--;
+						var start = point;
+					}
+					point = z.effects.volume(point,v,bits);
+				}
+				if(bits == 8){
 					samples += sfc(point & 255);
 				} else {
 					//16bit
@@ -144,11 +176,24 @@ wav ={
 		//   16 offset   pcm  num channels
 		c2 = ics(16,4)+ics(1,2)+ics(num_channels,2);
 		//      sample rate                    byte rate
-		c2 += ics(sample_rate,4)+ics((sample_rate * num_channels * bits_per_sample)/8,4)
+		c2 += ics(sample_rate,4)+ics((sample_rate * num_channels * bits)/8,4)
 		//           block align                     bits per sample
-		c2 += ics((num_channels * bits_per_sample)/8,2)+ics(bits_per_sample,2)+c3;
+		c2 += ics((num_channels * bits)/8,2)+ics(bits,2)+c3;
 		
 		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
+	},
+	effects:{
+		volume:function(point,v,bits){
+			var max = Math.pow(2,bits)/2;
+			//point *= Math.log(10);
+			point *= Math.tan(v/100.0);
+			if(point > max) {
+				point = max
+			} else if(point < -max) {
+				point = -max
+			}
+			return point;
+		}
 	}
 }
 //---------------------------------------------------
@@ -165,10 +210,11 @@ console.log(size);
 console.log(wav.intToChunkSize(size,4),' should equal ',chunk);
 
 //---------------------------------------------------
+/*
 console.info('STARTING PARSE TEST:');
 
 wav.parse(atob(wavHeader));
-
+*/
 
 var c = document.getElementById('c');
 
@@ -255,31 +301,53 @@ var piano = function(c){
 			}
 		}
 		
-		key = (((+key)*-1)+10)+30;
+		key = (+key)+28;//starts at low c
 
 		if(!generated[key]){
-			generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),8000,0.5,16))));
+			generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),11025,0.5,16))));
 		}
 		generated[key].play();
 	},false);
 };
 
 piano(c);
-/*
-var x = c.getContext('2d');
+
+var p = d.getElementById('p');
+p.width = 700;
+p.height = 256;
+
+x = p.getContext('2d');
 //draw wavform
 var w = 0;
 x.beginPath();    
 x.strokeStyle = "rgba(200,0,0,0.3)"; 
-wav.plotableFrequency(5,8000,0.5,function(point){
+wav.plotableFrequency(pianoFrequency(40),8000,0.5,function(point){
 	if(w < c.width){
 		x.lineTo(w,point);//(point+32767)/256));
 		w +=2;
+	} else {
+		//x.moveTo(0,point)
+		//w = 0;
 	}
 });
 x.stroke();  
-*/
 
+
+var l = d.getElementById('l');
+l.width = 100;
+l.height = 100;
+x = l.getContext('2d');
+//draw wavform
+var w = 0;
+x.beginPath();    
+x.strokeStyle = "rgba(0,200,100,0.3)"; 
+x.moveTo(0,0);
+for(i=1;i<100;i++) {
+	x.lineTo(w,parseInt(Math.log(i)*21.72));
+	w+=1;
+
+}
+x.stroke();  
 /*
 var frequencies = [];
 for(i =0;i<10;i++) {
@@ -358,6 +426,23 @@ frequency chart for piano
 	http://www.euclideanspace.com/art/music/scale/index.htm
 frequency equation for piano
 	http://en.wikipedia.org/wiki/Piano_key_frequencies
-the js example i found while trying to get my frequencies to sound right
+the js example i found while trying to get my frequencies to sound right. his dont sound right
 	http://www.sk89q.com/playground/jswav/
+https://wiki.mozilla.org/Audio_Data_API
+	has a good example of creating tones using the html5 audio data api
+	//size is how many samples you want to write to fill the specified interval (a second)
+	//no need to over tax cpus grinding out more
+	//t is the start offset
+	function getSoundData(t, size) {
+		var soundData = new Float32Array(size); //<---- awesome new typed array
+		if (freq) {
+			var k = 2* Math.PI * freq / sampleRate;
+			for (var i=0; i<size; i++) {
+				soundData[i] = Math.sin(k * (i + t));
+			}
+		}
+		return soundData;
+	}
+audio effects / volume
+	http://www.ypass.net/blog/2010/01/pcm-audio-part-3-basic-audio-effects-volume-control/
 */

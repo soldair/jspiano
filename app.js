@@ -1,5 +1,17 @@
+/**
+ * copyright Ryan Day 2010
+ * http://ryanday.org/
+ *
+ * mit/gpl dual licensed 
+ *
+ * use it modify it have a ball even make money off of it!
+ *
+ *
+ * hey so this is in heavy dev right now please dont hold me mess against me
+ *
+ * */
 
-
+//make sure console doesnt break stuff
 var noop = function(){};
 if(!window.console) window.console = {};
 if(!window.console.log) window.console.log = noop;

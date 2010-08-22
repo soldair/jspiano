@@ -132,20 +132,13 @@ wav ={
 		frequency.forEach(function(f,k){
 			var tick = false;
 			if(f.prepare) {
-				f = f.frequency;
-				tick = f.prepare({frequency:f,sample_rate:sample_rate,duration:duration,bits:bits,key:k,total:frequency.length});
+				freq = f.frequency;
+				tick = f.prepare({frequency:freq,sample_rate:sample_rate,duration:duration,bits:bits,key:k,total:frequency.length});
+				f = freq;
 			}
 			z.generateFrequency(f,sample_rate,duration,bits,function(point,sample){
-
-				//volume!
-				if(tick) point = tick(point,sample);
-
-				if(bits == 8){
-					samples += sfc(point & 255);
-				} else {
-					//16bit
-					samples += String.fromCharCode(point & 255, (point >> 8) & 255);
-				}
+				if(tick) point = tick(point,sample);//sound effects hook
+				samples += z.packer(point,bits);
 			});
 		});
 		
@@ -161,15 +154,15 @@ wav ={
 		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
 	},
 	effects:{
-		fadeOut:function(data,fade_duration){
-			var f=d.frequency,sample_rate = d.sample_rate,duration=d.duration,bits=d.bits,k=d.key,total = data.total;
-			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the volume of the drop at the last sample... maybe
+		fadeOut:function(d,fade_duration){
+			var f=d.frequency,sample_rate = d.sample_rate,duration=d.duration,bits=d.bits,k=d.key,total = d.total;
+			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the difference of the last  sample value and 0 - no volume no pop i cant inject extra samples without modifiying the wav headers
 			
 			var do_fade = 0,v=79,dec=0,z=this;
 			if(k == total-1){
 				do_fade = 1;
 
-				var samples_per_wave = Math.round(sample_rate/frequency),
+				var samples_per_wave = Math.round(sample_rate/f),
 				samples_in_last = sample_rate*(fade_duration||0.03),
 				dec_interval = v/samples_in_last,
 				s_samples = (sample_rate*duration),
@@ -179,6 +172,7 @@ wav ={
 					if(do_fade && sample >= decriment_at_sample) {
 						dec += dec_interval;
 						if(dec >=1 && v){
+							
 							v--;
 							var start = point;
 						}
@@ -310,13 +304,13 @@ var piano = function(c){
 		key = (+key)+28;//starts at low c
 
 		if(!generated[key]){
-			/*var frequency = {
+			var frequency = {
 				frequency:pianoFrequency(key),
 				prepare:function(data){
 					return wav.effects.fadeOut(data,0.03);
 				}
-			};*/
-			var frequency = pianoFrequency(key);
+			};
+			//var frequency = pianoFrequency(key);
 			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,16))));
 		}
 		generated[key].play();
@@ -354,10 +348,10 @@ x = l.getContext('2d');
 var w = 0;
 x.beginPath();    
 x.strokeStyle = "rgba(0,200,100,0.3)"; 
-x.moveTo(0,0);
-for(i=1;i<100;i++) {
+x.moveTo(0,100);
+for(i=100;i>0;i--) {
 	x.lineTo(w,parseInt(Math.log(i)*21.72));
-	w+=1;
+	w++;
 
 }
 x.stroke();  

@@ -61,7 +61,6 @@ wav ={
 			console.log(btoa(c));
 			offset++;
 		}*/
-		
 	},
 	readChunkSize:function(cs){
 		var dec = "";
@@ -154,6 +153,8 @@ wav ={
 		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
 	},
 	effects:{
+		//fade out is setup as a generate wav callback but it is and intended arch for all effect functions
+		// it should really be in another object as it is like a packaged transform
 		fadeOut:function(d,fade_duration){
 			var f=d.frequency,sample_rate = d.sample_rate,duration=d.duration,bits=d.bits,k=d.key,total = d.total;
 			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the difference of the last  sample value and 0 - no volume no pop i cant inject extra samples without modifiying the wav headers
@@ -162,11 +163,11 @@ wav ={
 			if(k == total-1){
 				do_fade = 1;
 
-				var samples_per_wave = Math.round(sample_rate/f),
-				samples_in_last = sample_rate*(fade_duration||0.03),
-				dec_interval = v/samples_in_last,
-				s_samples = (sample_rate*duration),
-				decriment_at_sample = s_samples-samples_in_last;
+				//var samples_per_wave = Math.round(sample_rate/f),
+				var samples_in_last = sample_rate*(fade_duration||0.03),
+					dec_interval = v/samples_in_last,
+					s_samples = (sample_rate*duration),
+					decriment_at_sample = s_samples-samples_in_last;
 				
 				return function(point,sample){
 					if(do_fade && sample >= decriment_at_sample) {
@@ -183,6 +184,7 @@ wav ={
 			}
 			return false;
 		},
+		//standard "tick" function designed to be called to apply a single transform to a single point
 		volume:function(point,v,bits){
 			var max = Math.pow(2,bits)/2;
 			//point *= Math.log(10);

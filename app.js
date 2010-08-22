@@ -100,11 +100,12 @@ wav ={
 		return s;
 	},
 	generateFrequency:function(frequency,sample_rate,duration,bits,cb){
-		var k = 2* Math.PI * frequency / sample_rate;
-		samples = sample_rate*duration,
-		max = Math.pow( 2, bits ),
-		halfMax = max/2,
-		unsign = 0;
+		var k = 2* Math.PI * frequency / sample_rate,
+			samples = sample_rate*duration,
+			max = Math.pow( 2, bits ),
+			halfMax = max/2,
+			unsign = 0;
+
 		if(bits == 8) unsign = halfMax; 
 		
 		for (var i=0; i<samples; i++) {
@@ -124,44 +125,21 @@ wav ={
 		});
 	},
 	generateWav:function(frequency,sample_rate,duration,bits){
-
-		var c3,c2,num_channels = 1,ics = wav.intToChunkSize;
-		//NumSamples * NumChannels * BitsPerSample/8
-		var samples = "";
-		var z = this;
+		var c3,c2,num_channels = 1,ics = wav.intToChunkSize,samples = "",z = this;
 
 		if(!(frequency instanceof Array)) frequency = [frequency];
 
 		frequency.forEach(function(f,k){
-			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the volume of the drop at the last sample... maybe
-			var do_fade = 0,v=79,dec=0;
-			if(k == frequency.length-1){
-				do_fade = 1;
-
-				var samples_per_wave = Math.round(sample_rate/frequency),
-				samples_in_last = sample_rate*0.03,
-				dec_interval = 79/samples_in_last,
-				s_samples = (sample_rate*duration),
-				decriment_at_sample = s_samples-samples_in_last;
-				
-				console.log('waves in file: ',s_samples/(sample_rate/frequency));
-				console.log('samples in last 100th:',samples_in_last);
-
+			var tick = false;
+			if(f.prepare) {
+				f = f.frequency;
+				tick = f.prepare({frequency:f,sample_rate:sample_rate,duration:duration,bits:bits,key:k,total:frequency.length});
 			}
 			z.generateFrequency(f,sample_rate,duration,bits,function(point,sample){
 
 				//volume!
+				if(tick) point = tick(point,sample);
 
-				//point = z.effects.volume(point,1.1,bits);
-				if(do_fade && sample >= decriment_at_sample) {
-					//console.log('should decriment_at_sample');
-					dec += dec_interval;
-					if(dec >=1 && v){
-						v--;
-						var start = point;
-					}
-					point = z.effects.volume(point,v,bits);
-				}
 				if(bits == 8){
 					samples += sfc(point & 255);
 				} else {
@@ -183,6 +161,34 @@ wav ={
 		return "RIFF"+this.intToChunkSize(c2.length,4)+"WAVEfmt "+c2;
 	},
 	effects:{
+		fadeOut:function(data,fade_duration){
+			var f=d.frequency,sample_rate = d.sample_rate,duration=d.duration,bits=d.bits,k=d.key,total = data.total;
+			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the volume of the drop at the last sample... maybe
+			
+			var do_fade = 0,v=79,dec=0,z=this;
+			if(k == total-1){
+				do_fade = 1;
+
+				var samples_per_wave = Math.round(sample_rate/frequency),
+				samples_in_last = sample_rate*(fade_duration||0.03),
+				dec_interval = v/samples_in_last,
+				s_samples = (sample_rate*duration),
+				decriment_at_sample = s_samples-samples_in_last;
+				
+				return function(point,sample){
+					if(do_fade && sample >= decriment_at_sample) {
+						dec += dec_interval;
+						if(dec >=1 && v){
+							v--;
+							var start = point;
+						}
+						point = z.volume(point,v,bits);
+					}
+					return point;
+				}
+			}
+			return false;
+		},
 		volume:function(point,v,bits){
 			var max = Math.pow(2,bits)/2;
 			//point *= Math.log(10);
@@ -272,11 +278,11 @@ var piano = function(c){
 
 	var generated = {};
 	c.addEventListener('click', function(ev){
-		var x = ev.clientX,y = ev.clientY;
-		//white key
-		var key = Math.floor(x/100);
-
-		var h = ev.currentTarget.height,b_key = -1;
+		var x = ev.clientX,
+			   y = ev.clientY,
+			   key = Math.floor(x/100),
+			   h = ev.currentTarget.height,
+			   b_key = -1;
 		for(var i in regions){
 			var d = regions[i];
 			if((d.t[0] < x && d.b[0] > x) && (d.t[1] < y && d.b[1] > y)){
@@ -304,7 +310,14 @@ var piano = function(c){
 		key = (+key)+28;//starts at low c
 
 		if(!generated[key]){
-			generated[key] = new Audio(duri(btoa(wav.generateWav(pianoFrequency(key),11025,0.5,16))));
+			/*var frequency = {
+				frequency:pianoFrequency(key),
+				prepare:function(data){
+					return wav.effects.fadeOut(data,0.03);
+				}
+			};*/
+			var frequency = pianoFrequency(key);
+			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,16))));
 		}
 		generated[key].play();
 	},false);

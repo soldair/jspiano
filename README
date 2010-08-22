@@ -1,8 +1,3 @@
-copyright ryan day 2010
-http://ryanday.org
-
-lgpl and such
-
 JSPIANO
 
 -- goals --
@@ -17,5 +12,6 @@ create a libarary of effects useful for generated audio
 8/22/10
 	as of now the piano plays audio on key click in firefox, safari, and opera. OSX and Linux
 	I have heard users complain about no audio in windows firefox but it should be documented that you must increase the volume a bit 
-	as the range of piano frequencies i have chosen is rather on the bass side and laptop speakers dont always do a good job. CRANK IT UP BROS
+	as the range of piano frequencies i have chosen is rather on the bass side and laptop speakers dont 
+	always do a good job. CRANK IT UP BROS!
 	ill dig into windows specific issues when i have a chance =).

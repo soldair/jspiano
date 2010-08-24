@@ -289,6 +289,7 @@ var piano = function(c){
 		key = (+key)+28;//starts at low c
 
 		if(!generated[key]){
+
 			var frequency = {
 				frequency:pianoFrequency(key),
 				prepare:function(data){
@@ -296,7 +297,8 @@ var piano = function(c){
 				}
 			};
 			//var frequency = pianoFrequency(key);
-			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,16))));
+			var saf = navigator.userAgent.indexOf('Safari')!=-1;
+			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,saf?8:16))));
 		}
 		if(generated[key].currentTime > 0){
 			generated[key].currentTime = 0;

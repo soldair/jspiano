@@ -284,7 +284,26 @@ var piano = function(c){
 		num++;
 	}  
 
-	var generated = {};
+	var generated = {},
+	generateSound = function(key){
+		key = (+key)+28;//starts at low c
+
+		if(!generated[key]){
+			var frequency = {
+				frequency:pianoFrequency(key),
+				prepare:function(data){
+					return wav.effects.fadeOut(data,0.03);
+				}
+			};
+			//var frequency = pianoFrequency(key);
+			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,16))));
+		}
+		if(generated[key].currentTime > 0){
+			generated[key].currentTime = 0;
+		} else {
+			generated[key].play();
+		}
+	};
 	c.addEventListener('click', function(ev){
 		var x = ev.clientX,
 			   y = ev.clientY,
@@ -314,20 +333,21 @@ var piano = function(c){
 				}
 			}
 		}
-		
-		key = (+key)+28;//starts at low c
+		generateSound(key);
+	},false);
 
-		if(!generated[key]){
-			var frequency = {
-				frequency:pianoFrequency(key),
-				prepare:function(data){
-					return wav.effects.fadeOut(data,0.03);
-				}
-			};
-			//var frequency = pianoFrequency(key);
-			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,16))));
+	var downtime = {};
+	d.addEventListener('keydown',function(ev){
+		var t = new Date().getTime();
+		if(downtime[ev.which] && downtime[ev.which]+350 > t){
+			return;
 		}
-		generated[key].play();
+		
+		downtime[ev.which] = t;
+		var c = sfc(ev.which),k ='awsedftgyhuj'.indexOf(c.toLowerCase());
+		if(k >-1){
+			generateSound(k);
+		}
 	},false);
 };
 

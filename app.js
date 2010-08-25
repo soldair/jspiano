@@ -7,7 +7,7 @@
  * use it modify it have a ball even make money off of it!
  *
  *
- * hey so this is in heavy dev right now please dont hold me mess against me
+ * hey so this is in heavy dev right now please dont hold me mess against me .... arrr
  *
  * */
 
@@ -19,7 +19,7 @@ if(!window.console.info) window.console.info = noop;
 if(!window.console.warn) window.console.warn = noop;
 
 var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
-d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s){return "data:audio/wav;base64,"+s}
+d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s){return "data:audio/x-wav;base64,"+s},saf = navigator.userAgent.indexOf('Safari')!=-1;
 wav ={
 	parse:function(wavHeader){
 		//RIFF
@@ -172,7 +172,7 @@ wav ={
 			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the difference of the last  sample value and 0 - no volume no pop i cant inject extra samples without modifiying the wav headers
 			
 			var do_fade = 0,v=79,dec=0,z=this;
-			if(k == total-1){
+			//if(k == total-1){
 				do_fade = 1;
 
 				//var samples_per_wave = Math.round(sample_rate/f),
@@ -191,9 +191,9 @@ wav ={
 						}
 						point = z.volume(point,v,bits);
 					}
-					return point;
+					return bits==8?point+128:point;
 				}
-			}
+			//}
 			return false;
 		},
 		//standard "tick" function designed to be called to apply a single transform to a single point
@@ -282,30 +282,65 @@ var piano = function(c){
 		}
 		w+= width;
 		num++;
-	}  
-
-	var generated = {},
-	generateSound = function(key){
-		key = (+key)+28;//starts at low c
-
-		if(!generated[key]){
-
-			var frequency = {
-				frequency:pianoFrequency(key),
+	}
+	
+	var d_e = ce('div'),a_e=ce('a'),p_e=ce('a'),notes_e=ce('div'),
+	addNote = function(note,a){
+		var txt =notes_e.textContent,a=[];
+		if(txt.length)a=txt.split(',');
+		a.push(note);
+		if(a.length > 20)a.shift();
+		notes_e.textContent = a.join(',');
+	},
+	buildSound = function(f){
+		if(!f.map) f=[f];
+		
+		f.map(function(v,k){
+			f[k]={
+				frequency:v,
 				prepare:function(data){
 					return wav.effects.fadeOut(data,0.03);
 				}
 			};
-			//var frequency = pianoFrequency(key);
-			var saf = navigator.userAgent.indexOf('Safari')!=-1;
-			generated[key] = new Audio(duri(btoa(wav.generateWav(frequency,11025,0.5,saf?8:16))));
+		});
+		
+		var out =  duri(btoa(wav.generateWav(f,11025,0.5,saf?8:16)));
+		console.log(out.length);
+		return out;
+	},
+	generated = {},
+	generateSound = function(key){
+		key = pianoFrequency((+key)+28);//starts at low c
+		if(!generated[key]){
+			generated[key] = new Audio(buildSound(key));
 		}
+		addNote(key);
 		if(generated[key].currentTime > 0){
 			generated[key].currentTime = 0;
 		} else {
 			generated[key].play();
 		}
 	};
+	
+	//--- make download app
+	a_e.textContent=' Download Wav ';
+	p_e.textContent='| Play Wav ';
+	//notes_e.style.border='1px solid black';
+	d_e.appendChild(a_e);
+	d_e.appendChild(p_e);
+	d_e.appendChild(notes_e);
+	d.body.appendChild(d_e);
+	
+	a_e.addEventListener('click',function(ev){
+		window.location = buildSound(notes_e.textContent.split(','));
+	},false);
+	p_e.addEventListener('click',function(ev){
+		var a = new Audio(buildSound(notes_e.textContent.split(',')));
+		a.play();
+	},false);
+	//------------
+	
+	//click interaction implementation
 	c.addEventListener('click', function(ev){
 		var x = ev.clientX,
 			   y = ev.clientY,
@@ -354,7 +389,7 @@ var piano = function(c){
 };
 
 piano(c);
-
+/*
 var p = d.getElementById('p');
 p.width = 700;
 p.height = 256;
@@ -391,6 +426,7 @@ for(i=100;i>0;i--) {
 
 }
 x.stroke();  
+*/
 /*
 var frequencies = [];
 for(i =0;i<10;i++) {

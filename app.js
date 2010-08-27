@@ -19,7 +19,8 @@ if(!window.console.info) window.console.info = noop;
 if(!window.console.warn) window.console.warn = noop;
 
 var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
-d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s){return "data:audio/x-wav;base64,"+s},saf = navigator.userAgent.indexOf('Safari')!=-1;
+d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s,x){return "data:"+(x||"audio/x-wav")+";base64,"+s},ua=navigator.userAgent, chr = ua.indexOf('Chrome')!=-1, saf = ua.indexOf('Safari')!=-1 & !chr,opr=ua.indexOf('Opera'),bits=(saf?8:16);
+
 wav ={
 	parse:function(wavHeader){
 		//RIFF
@@ -114,7 +115,7 @@ wav ={
 		var k = 2* Math.PI * frequency / sample_rate,
 			samples = sample_rate*duration,
 			max = Math.pow( 2, bits ),
-			halfMax = max/2,
+			halfMax = (max/2)-1,
 			unsign = 0;
 
 		if(bits == 8) unsign = halfMax; 
@@ -136,10 +137,10 @@ wav ={
 		});
 	},
 	generateWav:function(frequency,sample_rate,duration,bits){
-		var c3,c2,num_channels = 1,ics = wav.intToChunkSize,samples = "",z = this;
+		var c3,c2,num_channels = 1,ics = wav.intToChunkSize,samples = "",z = this,h=Math.pow(2,bits)/2;
 
 		if(!(frequency instanceof Array)) frequency = [frequency];
-
+		var lastSample = 0;
 		frequency.forEach(function(f,k){
 			var tick = false;
 			if(f.prepare) {
@@ -149,8 +150,12 @@ wav ={
 			}
 			z.generateFrequency(f,sample_rate,duration,bits,function(point,sample){
 				if(tick) point = tick(point,sample);//sound effects hook
-				samples += z.packer(point,bits);
+
+				if(bits==8) point+=128;
+				lastSample = point;
+				samples += z.packer(parseInt(point),bits);
 			});
+			console.log('lastSample ',lastSample);
 		});
 		
 		c3 = "data"+ics(samples.length,4)+samples;
@@ -171,36 +176,36 @@ wav ={
 			var f=d.frequency,sample_rate = d.sample_rate,duration=d.duration,bits=d.bits,k=d.key,total = d.total;
 			//THERE IS AN ANNOYING POPPING SOUND  at the end of generated wavs me thinks is related to the difference of the last  sample value and 0 - no volume no pop i cant inject extra samples without modifiying the wav headers
 			
-			var do_fade = 0,v=79,dec=0,z=this;
-			//if(k == total-1){
-				do_fade = 1;
-
-				//var samples_per_wave = Math.round(sample_rate/f),
-				var samples_in_last = sample_rate*(fade_duration||0.03),
-					dec_interval = v/samples_in_last,
-					s_samples = (sample_rate*duration),
-					decriment_at_sample = s_samples-samples_in_last;
+			var v=79,dec=0,z=this;
+			//var samples_per_wave = Math.round(sample_rate/f),
+			var samples_in_last = sample_rate*(fade_duration||0.03),
+				dec_interval = v/samples_in_last,
+				s_samples = (sample_rate*duration),
+				decriment_at_sample = s_samples-samples_in_last;
 				
-				return function(point,sample){
-					if(do_fade && sample >= decriment_at_sample) {
-						dec += dec_interval;
-						if(dec >=1 && v){
-							
-							v--;
-							var start = point;
-						}
-						point = z.volume(point,v,bits);
+			console.log(samples_in_last,'---',dec_interval,'---',s_samples,'----',decriment_at_sample);
+				
+			return function(point,sample){
+				//return z.volume(point,10,bits);
+				if(sample >= decriment_at_sample) {
+					dec += dec_interval;
+					if(dec >=1 && v){
+						v--;
+						dec = 0;
+						var start = point;
 					}
-					return bits==8?point+128:point;
+					var s = point;
+					point = z.volume(point,v,bits);
 				}
-			//}
+				return point;
+			}
+			
 			return false;
 		},
 		//standard "tick" function designed to be called to apply a single transform to a single point
 		volume:function(point,v,bits){
 			var max = Math.pow(2,bits)/2;
-			//point *= Math.log(10);
-			point *= Math.tan(v/100.0);
+			point = point*Math.tan(v/100.0);
 			if(point > max) {
 				point = max
 			} else if(point < -max) {
@@ -211,6 +216,7 @@ wav ={
 	}
 }
 //---------------------------------------------------
+/*
 console.info('STARTING CHUNK SIZE TEST:');
 
 var chunk = sfc(parseInt("24",16))+
@@ -222,7 +228,7 @@ var size = wav.readChunkSize(chunk);
 
 console.log(size);
 console.log(wav.intToChunkSize(size,4),' should equal ',chunk);
-
+*/
 //---------------------------------------------------
 /*
 console.info('STARTING PARSE TEST:');
@@ -289,7 +295,7 @@ var piano = function(c){
 		var txt =notes_e.textContent,a=[];
 		if(txt.length)a=txt.split(',');
 		a.push(note);
-		if(a.length > 20)a.shift();
+		if(a.length > 10)a.shift();
 		notes_e.textContent = a.join(',');
 	},
 	buildSound = function(f){
@@ -299,14 +305,12 @@ var piano = function(c){
 			f[k]={
 				frequency:v,
 				prepare:function(data){
-					return wav.effects.fadeOut(data,0.03);
+					return wav.effects.fadeOut(data,0.02);
 				}
 			};
 		});
 		
-		var out =  duri(btoa(wav.generateWav(f,11025,0.5,saf?8:16)));
-		console.log(out.length);
-		return out;
+		return duri(btoa(wav.generateWav(f,11025,0.5,bits)));
 	},
 	generated = {},
 	generateSound = function(key){
@@ -317,27 +321,32 @@ var piano = function(c){
 		addNote(key);
 		if(generated[key].currentTime > 0){
 			generated[key].currentTime = 0;
-		} else {
+		}// else {
 			generated[key].play();
-		}
+		//}
+		//window.testAudio = generated[key]; 
 	};
 	
 	//--- make download app
-	a_e.textContent=' Download Wav ';
-	p_e.textContent='| Play Wav ';
-	//notes_e.style.border='1px solid black';
-	d_e.appendChild(a_e);
-	d_e.appendChild(p_e);
+
+
 	d_e.appendChild(notes_e);
 	d.body.appendChild(d_e);
 	
+	a_e.textContent=' Export Wav ';
+	d_e.appendChild(a_e);
 	a_e.addEventListener('click',function(ev){
-		window.location = buildSound(notes_e.textContent.split(','));
+		window.location = buildSound(notes_e.textContent.split(','));//\.replace('audio/x-wav','application/octet-stream');
 	},false);
-	p_e.addEventListener('click',function(ev){
-		var a = new Audio(buildSound(notes_e.textContent.split(',')));
-		a.play();
-	},false);
+	
+	if(!chr){
+		p_e.textContent='| Play Wav ';
+		d_e.appendChild(p_e);
+		p_e.addEventListener('click',function(ev){
+			var a = new Audio(buildSound(notes_e.textContent.split(',')));
+			a.play();
+		},false);
+	}
 	//------------
 	
 	//click interaction implementation
@@ -386,9 +395,10 @@ var piano = function(c){
 			generateSound(k);
 		}
 	},false);
+	return generated;
 };
 
-piano(c);
+var generated = piano(c);
 /*
 var p = d.getElementById('p');
 p.width = 700;

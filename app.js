@@ -290,7 +290,7 @@ var piano = function(c){
 		num++;
 	}
 	
-	var d_e = ce('div'),a_e=ce('a'),p_e=ce('a'),notes_e=ce('div'),
+	var d_e = ce('div'),a_e=ce('a'),ad_e=ce('a'),p_e=ce('a'),notes_e=ce('div'),
 	addNote = function(note,a){
 		var txt =notes_e.textContent,a=[];
 		if(txt.length)a=txt.split(',');
@@ -298,7 +298,7 @@ var piano = function(c){
 		if(a.length > 10)a.shift();
 		notes_e.textContent = a.join(',');
 	},
-	buildSound = function(f){
+	buildSound = function(f,m){
 		if(!f.map) f=[f];
 		
 		f.map(function(v,k){
@@ -310,7 +310,7 @@ var piano = function(c){
 			};
 		});
 		
-		return duri(btoa(wav.generateWav(f,11025,0.5,bits)));
+		return duri(btoa(wav.generateWav(f,11025,0.5,bits)),m);
 	},
 	generated = {},
 	generateSound = function(key){
@@ -331,12 +331,17 @@ var piano = function(c){
 
 
 	d_e.appendChild(notes_e);
-	d.body.appendChild(d_e);
-	
-	a_e.textContent=' Export Wav ';
+
+	ad_e.textContent=' Download Wav ';
+	d_e.appendChild(ad_e);
+	ad_e.addEventListener('click',function(ev){
+		window.location = buildSound(notes_e.textContent.split(','),'application/wav');
+	},false);
+
+	a_e.textContent=' | Export Wav ';
 	d_e.appendChild(a_e);
 	a_e.addEventListener('click',function(ev){
-		window.location = buildSound(notes_e.textContent.split(','));//\.replace('audio/x-wav','application/octet-stream');
+		window.location = buildSound(notes_e.textContent.split(','));
 	},false);
 	
 	if(!chr){
@@ -347,8 +352,10 @@ var piano = function(c){
 			a.play();
 		},false);
 	}
+
+	d.body.appendChild(d_e);
 	//------------
-	
+
 	//click interaction implementation
 	c.addEventListener('click', function(ev){
 		var x = ev.clientX,

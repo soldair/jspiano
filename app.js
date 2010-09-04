@@ -19,7 +19,7 @@ if(!window.console.info) window.console.info = noop;
 if(!window.console.warn) window.console.warn = noop;
 
 var sfc = String.fromCharCode, wav,//expose a named ref to wav within itself
-d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s,x){return "data:"+(x||"audio/x-wav")+";base64,"+s},ua=navigator.userAgent, chr = ua.indexOf('Chrome')!=-1, saf = ua.indexOf('Safari')!=-1 & !chr,opr=ua.indexOf('Opera'),bits=(saf?8:16);
+d = document, ce = function(nn){return d.createElement(nn)}, duri = function(s,x){return "data:"+(x||"audio/wav")+";base64,"+s},ua=navigator.userAgent, chr = ua.indexOf('Chrome')!=-1, saf = ua.indexOf('Safari')!=-1 & !chr,opr=ua.indexOf('Opera'),bits=16;//(saf?8:16);
 
 wav ={
 	parse:function(wavHeader){
@@ -314,7 +314,7 @@ var piano = function(c){
 	},
 	generated = {},
 	generateSound = function(key){
-		key = pianoFrequency((+key)+28);//starts at low c
+		key = pianoFrequency((+key)+40);//starts at middle c
 		if(!generated[key]){
 			generated[key] = new Audio(buildSound(key));
 		}
@@ -516,8 +516,6 @@ setTimeout(function(){
 CREDITS:
 great explaination of the wav file format
 	https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
-audio provided me with good unit testing fodder:
-	http://www.e2s.com/x10-tones.htm
 frequency chart for piano
 	http://www.euclideanspace.com/art/music/scale/index.htm
 frequency equation for piano

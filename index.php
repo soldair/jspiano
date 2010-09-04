@@ -3,6 +3,6 @@
 	<head></head>
 	<body>
 		<canvas id="c"></canvas>
-		<script src="app.js?<?=time()?>"></script>
+		<script src="js1k.js?<?=time()?>"></script>
 	</body>
 </html>

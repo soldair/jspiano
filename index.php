@@ -40,5 +40,10 @@
 		<canvas id="packer"></canvas>
 		<script src="pngpacker.js?<?=time()?>"></script>
 		-->
+		<?
+		// =/ not important for the project but hey what can i say...
+		if(file_exists('../me.inc.php')) require '../me.inc.php';
+		if(file_exists('../google_analytics.inc.php')) require '../google_analytics.inc.php';
+		?>
 	</body>
 </html>

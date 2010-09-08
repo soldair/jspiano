@@ -87,7 +87,7 @@ d.addEventListener('keydown',function(ev){
 	}
 	
 	downtime[w] = t;
-	var c = sfc(w),k ='awsedftgyhuj'.indexOf(c.toLowerCase());
+	var c = sfc(w),k ='AWSEDFTGYHUJ'.indexOf(c);
 	if(k >-1){
 		generateSound(k);
 	}

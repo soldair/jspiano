@@ -38,7 +38,7 @@ e.addEventListener("keydown", function(a,b) {
 	a = a.which;
 	if(!(j[a] && j[a] + 350 > b)) {
 		j[a] = b;
-		b = "awsedftgyhuj".indexOf(c(a));
+		b = "AWSEDFTGYHUJ".indexOf(c(a));
 		if(b > -1) {
 			b = 440 * Math.pow(1.0594630943, +b + 41 - 49);
 			k[b] || (k[b] = new Audio(_b(b)));

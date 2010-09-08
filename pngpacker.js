@@ -33,6 +33,7 @@ document.body.appendChild(d);
 
 var encoded_data = atob(codeImage.split('base64,')[1]);
 
+//this is really bad size wise but i was just wondering
 var evalable_bin = JSON.stringify(encoded_data);
 
 alert('stringified length: '+evalable_bin.length);

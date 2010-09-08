@@ -99,19 +99,7 @@ wav ={
 		return parseInt(dec,16);
 	},
 	intToChunkSize:function(i,len){
-		/*var hex = i.toString(16);
-		var reversed = hex.split('').reverse().join('').match(/.{1,2}/g).map(function(v){return v.split('').reverse().join('')});
-		
-		var voodoo = '';
-		for(var i in reversed) {
-			voodoo = voodoo+sfc(parseInt(reversed[i],16));
-		}
-		if(len && voodoo.length < len){
-			while(voodoo.length < len){
-				voodoo += sfc(0);
-			}
-		}*/
-		return this.packer(i,len*8);
+		return wav.packer(i,len*8);
 	},
 	packer:function(v,bits){
 		var s = '',i;
@@ -165,7 +153,7 @@ wav ={
 				lastSample = point;
 				samples += z.packer(parseInt(point),bits);
 			});
-			console.log('lastSample ',lastSample);
+			//console.log('lastSample ',lastSample);
 		});
 		
 		c3 = "data"+ics(samples.length,4)+samples;
@@ -193,7 +181,7 @@ wav ={
 				s_samples = (sample_rate*duration),
 				decriment_at_sample = s_samples-samples_in_last;
 				
-			console.log(samples_in_last,'---',dec_interval,'---',s_samples,'----',decriment_at_sample);
+			//console.log(samples_in_last,'---',dec_interval,'---',s_samples,'----',decriment_at_sample);
 				
 			return function(point,sample){
 				//return z.volume(point,10,bits);

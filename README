@@ -1,5 +1,16 @@
 JSPIANO
 
+9/7/10
+	minified version of js piano without interface or click ui is up and running.
+	chrome doesnt support downloading data uris, long data uris, or wavs so i hope that my demo can bring some attention to what a huge blocker one of the best browsers is causing in the specific field of client side file generation.
+
+8/22/10
+	as of now the piano plays audio on key click in firefox, safari, and opera. OSX and Linux
+	I have heard users complain about no audio in windows firefox but it should be documented that you must
+	increase the volume a bit as the range of piano frequencies i have chosen is rather on the bass side and
+	laptop speakers dont always do a good job. CRANK IT UP BROS!
+	Ill dig into windows specific issues when i have a chance =).
+
 -- goals --
 explore audio generation in javascript
 allow the download of generated audio
@@ -9,9 +20,4 @@ keep the code base rather decoupled so extracting needed parts of the code could
 perhaps make a hack version of vorbis encoding based on the lack of complexity in the generated audio to provide client side sound to chrome
 create a libarary of effects useful for generated audio
 
-8/22/10
-	as of now the piano plays audio on key click in firefox, safari, and opera. OSX and Linux
-	I have heard users complain about no audio in windows firefox but it should be documented that you must
-	increase the volume a bit as the range of piano frequencies i have chosen is rather on the bass side and
-	laptop speakers dont always do a good job. CRANK IT UP BROS!
-	Ill dig into windows specific issues when i have a chance =).
+

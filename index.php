@@ -10,7 +10,7 @@
 		<div>
 			to play use the keyboard keys "awsedftgyhuj" the non js1k version supports clicking piano keys on a canvas piano.
 			<br/>
-			please note that my intention was always to use this as a js1k submission so please excuse the lack of pbvious features and forgive the drop of nice to have features in the 1k version.
+			please note that my intention was always to use this as a js1k submission so please excuse the lack of obvious features and forgive the drop of nice to have features in the 1k version.
 		</div>
 		<div>
 		<?

@@ -4,6 +4,7 @@
 		<title>My js piano in a little bit o code</title>
 	</head>
 	<body>
+		<div style="margin:0px auto;width:900px;">
 		<h1>JAVASCRIPT PIANO</h1>
 		<a href="http://github.com/soldair/jspiano">get this code on github</a>
 		<div>
@@ -21,6 +22,7 @@
 		?>
 		</div>
 		<canvas id="c"></canvas>
+		</div>
 		<?
 		if(isset($_GET['js1k'])){
 			?>
@@ -42,7 +44,10 @@
 		-->
 		<?
 		// =/ not important for the project but hey what can i say...
-		if(file_exists('../me.inc.php')) require '../me.inc.php';
+		if(file_exists('../me.inc.php')) {
+			require '../me.inc.php';
+			?><link rel="stylesheet" href="/css/me.css" type="text/css"/><?
+		}
 		if(file_exists('../google_analytics.inc.php')) require '../google_analytics.inc.php';
 		?>
 	</body>
